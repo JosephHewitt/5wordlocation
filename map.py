@@ -37,6 +37,8 @@ def make_checksum(tochecksum):
 
 	tochecksum = tochecksum.strip()
 	fullhash = hashlib.md5(tochecksum.encode()).digest()
+	#2 bytes of the hash are turned into an 11-bit (0-2048) int and used as a checksum.
+	#@CrazyA99nl on Twitter helped me turn this into a one-liner:
 	toreturn = fullhash[0] + fullhash[1] * 256 & -1+2**11
 
 	logging.debug("Checksum %s was generated" %(toreturn))
@@ -50,24 +52,33 @@ def make_checksum(tochecksum):
 def to_coords(wordstr):
 	wordlist = wordstr.lower().strip().split(' ')
 
+	#Lookup word 1 and 2 to get the integer part and first decimal of lat/lon each.
 	latm = str(words.index(wordlist[0])).rjust(4,'0')
 	lonm = str(words.index(wordlist[1])).rjust(4,'0')
 
+	#fd = first digit (after decimal)
 	latfd = latm[-1:]
 	lonfd = lonm[-1:]
 
+	#strip the final digit because that belongs after the decimal.
 	latm = int(latm[:-1])
 	lonm = int(lonm[:-1])
 
+	#words 3 and 4 can be converted to digits 2,3,4 (after decimal) directly. Padding required.
 	lats = str(words.index(wordlist[2])).rjust(3,'0')
 	lons = str(words.index(wordlist[3])).rjust(3,'0')
 
+	#Put the first digit after decimal in front of the 2nd,3rd,4th.
 	lats = (latfd + lats)
 	lons = (lonfd + lons)
 
+	#Put the integer part in front of the decimals to create a full coordinate.
 	lat_out = str(latm) + '.' + str(lats)
 	lon_out = str(lonm) + '.' + str(lons)
 
+	#This probably could have been done in a few lines with mathmatical operations, but this seems less likely to induce rounding errors.
+
+	#Don't raise an exception when the 5th (checksum) word is missing, just trigger a checksum mismatch instead.
 	input_cs = -1
 	missing_checksum = False
 	try:
@@ -78,6 +89,7 @@ def to_coords(wordstr):
 
 	cs = make_checksum(' '.join(wordlist[:-1]))
 
+	#We +90 and +180 to lat/lon to make sure all coordinates are positive. This restores negative coordinates again.
 	lat_out = round(float(lat_out) - 90,4)
 	lon_out = round(float(lon_out) - 180,4)
 
@@ -101,40 +113,32 @@ def to_words(lat, lon):
 	lat = lat.ljust(10,'0')
 	lon = lon.ljust(10,'0')
 
+	#Get the integer part (before decimal) and first digit after the decimal, put them together to make an int.
 	latm = lat.split('.')[0]
 	lonm = lon.split('.')[0]
 
 	latm += lat.split('.')[1][:1]
 	lonm += lon.split('.')[1][:1]
 
+	#Use the generated integers as indices for the wordlist.
 	output_words = words[int(latm)] + ' ' + words[int(lonm)] + ' '
 
+	#Get the 2nd,3rd,4th digits after the decimal for both lat and lon. Turn them into integers.
 	lats = int(lat.split('.')[1][1:4])
 	lons = int(lon.split('.')[1][1:4])
 
 	output_words += words[lats] + ' ' + words[lons] + ' '
 
-	try:
-		latt = lat.split('.')[1][3:4]
-	except:
-		latt = '0'
+	cs = int(make_checksum(output_words))
 
-	try:
-		lont = lon.split('.')[1][3:4]
-	except:
-		lont = '0'
-
-	cs = str(make_checksum(output_words))
-	finaln = int(cs)
-
-	output_words += words[finaln]
+	output_words += words[cs]
 
 	return output_words
 
 def main():
 	print("This script is designed to be included in another, see tests.py and manual.py")
-	if len(words) < 1000:
-		print("Your word list appears to contain %s words which isn't enough. 1000 is the minimum. 4000 is recommended." %(len(words)))
+	if len(words) < 3700:
+		print("Your word list appears to contain %s words which isn't enough. 3700 is the minimum." %(len(words)))
 		exit()
 	print("Some examples of what this software can do:\n")
 
