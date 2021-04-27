@@ -35,7 +35,9 @@ if args.count(' ') > 1:
         print("This group of words causes a checksum error; at least one of the words must be incorrect.")
         exit()
 
-    print("%s matches %s" %(args,coords))
+    print("%s matches %s, Good checksum=%s" %(args,coords[0],coords[1]))
+    if not coords[1]:
+        print("Checksum verification failed! This location could be inaccurate. Check your words for typos.")
 
 else:
     args = args.replace(',',' ').replace('  ',' ')

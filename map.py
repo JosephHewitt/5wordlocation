@@ -93,11 +93,7 @@ def to_coords(wordstr):
 	lat_out = round(float(lat_out) - 90,4)
 	lon_out = round(float(lon_out) - 180,4)
 
-	if input_cs == cs:
-		return (lat_out, lon_out)
-
-	logging.error("Checksum mismatch: %s != %s. Coordinates using just 4 words = %s,%s" %(cs,input_cs,lat_out,lon_out))
-	return False
+	return (lat_out, lon_out), cs == input_cs
 
 
 def to_words(lat, lon):

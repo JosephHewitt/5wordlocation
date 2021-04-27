@@ -36,6 +36,12 @@ def run_test(coords, causefail=False):
 
     words = map.to_words(lat, lon)
     coords_from_words = map.to_coords(words)
+    checksum_pass = coords_from_words[1]
+    coords_from_words = coords_from_words[0]
+
+    if not checksum_pass:
+        print("Test FAILED: Bad checksum. in=%s, out=%s, words=%s" %(coords, coords_from_words,words))
+        return False
 
     coords = (round(coords[0],4), round(coords[1],4))
     
